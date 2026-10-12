@@ -1,0 +1,19 @@
+{
+  "name": "Calculador de Recibo de Sueldo",
+  "short_name": "Recibo Sueldo",
+  "description": "Calculadora de recibo de sueldo con categorías, meses, aumentos futuros y comparación vs inflación",
+  "id": "/recibo-sueldo/",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#F4F6F5",
+  "theme_color": "#0D6B63",
+  "lang": "es-AR",
+  "icons": [
+    {"src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "icons/icon-192-maskable.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable"},
+    {"src": "icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}
