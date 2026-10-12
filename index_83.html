@@ -1,0 +1,2446 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0D6B63">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Recibo Sueldo">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+
+  <title>Calculador de Recibo de Sueldo</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    /* Tema claro suave (por defecto) — menos fatiga visual */
+    :root {
+      --primary: #0D6B63;
+      --primary-dark: #0A534D;
+      --primary-light: #E8F3F1;
+      --accent: #2A9B8F;
+      --bg: #F4F6F5;
+      --bg-gradient-1: #F4F6F5;
+      --bg-gradient-2: #EEF2F1;
+      --bg-gradient-3: #F0F4F3;
+      --card: #FAFBFA;
+      --border: #C5D9D5;
+      --text: #1E2E2C;
+      --text-muted: #7A8F8B;
+      --muted: #5C6B68;
+      --discount: #C45C5C;
+      --success: #2F7A5E;
+      --warning: #B8860B;
+      --table-even: #F2F5F4;
+      --table-hover: #E8F0EE;
+      --shadow: rgba(13, 107, 99, 0.08);
+      --input-bg: #EEF3F2;
+      --proyeccion-bg: #FFF9EB;
+      --proyeccion-border: #F0DFA0;
+      --proyeccion-text: #7A5C10;
+      --neto-bg: #D8EFE8;
+      --neto-border: #7BC4A8;
+      --header-grad-1: #EEF5F3;
+      --header-grad-2: #E8F2EF;
+      --title-bg: #F8F0D8;
+      --title-text: #7A5C10;
+      --title-border: #E8D48A;
+      --btn-warning-bg: #F8F0D8;
+      --btn-warning-text: #7A5C10;
+      --btn-warning-border: #E8D48A;
+    }
+
+    /* Tema oscuro — ideal para sesiones largas */
+    [data-theme="dark"] {
+      --primary: #2A9B8F;
+      --primary-dark: #3DB5A8;
+      --primary-light: #1A2E2B;
+      --accent: #3DB5A8;
+      --bg: #0F1413;
+      --bg-gradient-1: #0F1413;
+      --bg-gradient-2: #121918;
+      --bg-gradient-3: #0F1413;
+      --card: #1A2221;
+      --border: #2A3D3A;
+      --text: #E4EBEA;
+      --text-muted: #7A908C;
+      --muted: #9AABA7;
+      --discount: #E07A7A;
+      --success: #4CAF8A;
+      --warning: #D4A017;
+      --table-even: #151C1B;
+      --table-hover: #1F2A28;
+      --shadow: rgba(0, 0, 0, 0.35);
+      --input-bg: #151C1B;
+      --proyeccion-bg: #2A2418;
+      --proyeccion-border: #5C4A1A;
+      --proyeccion-text: #E8C86A;
+      --neto-bg: #1A332C;
+      --neto-border: #2F7A5E;
+      --header-grad-1: #15201E;
+      --header-grad-2: #1A2825;
+      --title-bg: #2A2418;
+      --title-text: #E8C86A;
+      --title-border: #5C4A1A;
+      --btn-warning-bg: #2A2418;
+      --btn-warning-text: #E8C86A;
+      --btn-warning-border: #5C4A1A;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: linear-gradient(160deg, var(--bg-gradient-1) 0%, var(--bg-gradient-2) 50%, var(--bg-gradient-3) 100%);
+      color: var(--text);
+      line-height: 1.45;
+      padding: 20px 12px 40px;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: var(--primary-dark);
+      margin-bottom: 6px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 24px;
+    }
+
+    /* ===== CONTROLES ===== */
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+      background: var(--card);
+      padding: 18px 20px;
+      border-radius: 14px;
+      box-shadow: 0 4px 20px var(--shadow);
+      border: 1px solid var(--border);
+      margin-bottom: 20px;
+    }
+
+    .control-group label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      margin-bottom: 5px;
+    }
+
+    .control-group select,
+    .control-group input {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.95rem;
+      color: var(--text);
+      background: var(--input-bg);
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .control-group select:focus,
+    .control-group input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 18px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+    .btn-primary:hover {
+      background: var(--primary-dark);
+      transform: translateY(-1px);
+    }
+
+    .btn-outline {
+      background: white;
+      color: var(--primary);
+      border: 1.5px solid var(--primary);
+    }
+    .btn-outline:hover {
+      background: var(--primary-light);
+    }
+
+    .btn-warning {
+      background: var(--btn-warning-bg);
+      color: var(--btn-warning-text);
+      border: 1.5px solid var(--btn-warning-border);
+    }
+    .btn-warning:hover {
+      filter: brightness(0.95);
+    }
+    [data-theme="dark"] .btn-warning:hover {
+      filter: brightness(1.15);
+    }
+
+    /* ===== RESUMEN BASES ===== */
+    .bases-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .base-card {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 10px var(--shadow);
+    }
+
+    .base-card .label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .base-card .value {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--primary-dark);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .base-card.highlight {
+      background: linear-gradient(135deg, var(--primary-light), var(--border));
+      border-color: var(--accent);
+    }
+
+    /* ===== PROYECCIÓN ===== */
+    .proyeccion {
+      background: var(--proyeccion-bg);
+      border: 1.5px solid var(--proyeccion-border);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      align-items: flex-end;
+    }
+
+    .proyeccion h3 {
+      width: 100%;
+      font-size: 0.95rem;
+      color: var(--proyeccion-text);
+      margin-bottom: 4px;
+    }
+
+    .proyeccion .control-group {
+      flex: 1;
+      min-width: 140px;
+    }
+
+    /* ===== TABLA RECIBO ===== */
+    .recibo-card {
+      background: var(--card);
+      border-radius: 14px;
+      box-shadow: 0 4px 24px var(--shadow);
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    .recibo-header {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 22px;
+      background: linear-gradient(135deg, var(--header-grad-1), var(--header-grad-2));
+      border-bottom: 1px solid var(--border);
+    }
+
+    .recibo-title {
+      background: var(--title-bg);
+      color: var(--title-text);
+      font-weight: 700;
+      font-size: 0.9rem;
+      padding: 8px 16px;
+      border-radius: 8px;
+      text-align: center;
+      border: 1px solid var(--title-border);
+    }
+
+    .recibo-neto {
+      background: var(--neto-bg);
+      color: var(--primary-dark);
+      font-size: 1.7rem;
+      font-weight: 800;
+      padding: 10px 28px;
+      border-radius: 10px;
+      text-align: center;
+      border: 2px solid var(--neto-border);
+      letter-spacing: -0.02em;
+    }
+
+    .recibo-meta {
+      text-align: right;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .table-wrap { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.84rem;
+    }
+
+    thead {
+      background: var(--primary);
+      color: white;
+    }
+
+    thead th {
+      padding: 11px 9px;
+      font-weight: 600;
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    thead th.num { text-align: right; }
+
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+    }
+    tbody tr:nth-child(even) { background: var(--table-even); }
+    tbody tr:hover { background: var(--table-hover); }
+
+    tbody td {
+      padding: 8px 9px;
+      vertical-align: middle;
+    }
+
+    td.codigo {
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-weight: 600;
+      color: var(--primary);
+      width: 54px;
+    }
+
+    td.num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    td.descuento { color: var(--discount); font-weight: 500; }
+
+    /* Celdas editables en la tabla */
+    input.cell-edit {
+      width: 100%;
+      min-width: 70px;
+      max-width: 120px;
+      border: 1.5px dashed var(--accent);
+      background: var(--input-bg);
+      text-align: right;
+      font: inherit;
+      font-variant-numeric: tabular-nums;
+      color: var(--primary);
+      font-weight: 600;
+      padding: 4px 6px;
+      border-radius: 6px;
+      outline: none;
+      cursor: text;
+      -moz-appearance: textfield;
+    }
+    input.cell-edit::-webkit-outer-spin-button,
+    input.cell-edit::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input.cell-edit:hover {
+      background: var(--primary-light);
+      border-color: var(--accent);
+    }
+    input.cell-edit:focus {
+      background: var(--card);
+      border-style: solid;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent);
+    }
+
+    tfoot {
+      background: var(--primary-light);
+      border-top: 2px solid var(--border);
+    }
+
+    tfoot td {
+      padding: 10px 9px;
+      font-weight: 600;
+    }
+
+    .subtotal-label {
+      text-align: right;
+      color: var(--muted);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .neto-row {
+      background: var(--neto-bg) !important;
+    }
+    .neto-row td {
+      padding: 13px 9px !important;
+      font-size: 1.05rem;
+      color: var(--primary-dark);
+      border-top: 2px solid var(--neto-border);
+    }
+    .neto-label {
+      text-align: right;
+      font-weight: 700;
+    }
+    .neto-amount {
+      font-size: 1.2rem;
+      font-weight: 800;
+    }
+
+    /* ===== PARÁMETROS EDITABLES ===== */
+    .params {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 10px var(--shadow);
+    }
+
+    .params h3 {
+      font-size: 0.9rem;
+      color: var(--primary-dark);
+      margin-bottom: 12px;
+    }
+
+    .params-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+    }
+
+    .params .control-group input {
+      background: var(--card);
+    }
+
+    .footer-note {
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 16px;
+    }
+
+    @media (max-width: 700px) {
+      .recibo-header {
+        grid-template-columns: 1fr;
+        text-align: center;
+      }
+      .recibo-meta { text-align: center; }
+      .recibo-neto { font-size: 1.4rem; }
+    }
+
+    @media print {
+      body { background: white; padding: 0; color: #000; }
+      .controls, .proyeccion, .params, .btn, #themeToggle, #aparienciaPanel, #comparadorModal { display: none !important; }
+      .recibo-card { box-shadow: none; border: 1px solid #ccc; }
+    }
+
+
+    .paleta-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .paleta-swatch {
+      width: 72px;
+      height: 56px;
+      border-radius: 10px;
+      border: 2px solid var(--border);
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 2px 8px var(--shadow);
+      transition: transform 0.12s, border-color 0.12s;
+      padding: 0;
+      background: transparent;
+    }
+    .paleta-swatch:hover { transform: scale(1.06); }
+    .paleta-swatch.active {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 35%, transparent);
+    }
+    .paleta-swatch span {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      font-size: 0.62rem;
+      font-weight: 600;
+      text-align: center;
+      padding: 3px 2px;
+      background: rgba(0,0,0,0.45);
+      color: #fff;
+      line-height: 1.2;
+    }
+
+    /* Botón tema */
+    #themeToggle {
+      position: fixed;
+      top: 14px;
+      right: 14px;
+      z-index: 100;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1.5px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      font-size: 1.25rem;
+      cursor: pointer;
+      box-shadow: 0 2px 12px var(--shadow);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.15s, background 0.15s;
+    }
+    #themeToggle:hover {
+      transform: scale(1.08);
+      background: var(--primary-light);
+    }
+  </style>
+</head>
+<body>
+  <button type="button" id="themeToggle" title="Cambiar tema claro/oscuro" aria-label="Cambiar tema">🌙</button>
+  <div class="container">
+    <h1>Calculador de Recibo de Sueldo</h1>
+    <p class="subtitle">Seleccioná categoría y mes · Cargá aumentos futuros · Calculá el neto automáticamente</p>
+
+    <!-- CONTROLES PRINCIPALES -->
+    <div class="controls">
+      <div class="control-group">
+        <label>Mes</label>
+        <select id="mes">
+          <option value="enero 26">enero 26</option>
+          <option value="febrero 26">febrero 26</option>
+          <option value="marzo 26">marzo 26</option>
+          <option value="abril 26">abril 26</option>
+          <option value="mayo 26">mayo 26</option>
+          <option value="junio 26">junio 26</option>
+          <option value="julio 26">julio 26</option>
+          <option value="agosto 26" selected>agosto 26</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Categoría</label>
+        <select id="categoria">
+          <option value="13">Categoría 13</option>
+          <option value="16">Categoría 16</option>
+          <option value="18">Categoría 18</option>
+          <option value="19">Categoría 19</option>
+          <option value="20" selected>Categoría 20</option>
+          <option value="21">Categoría 21</option>
+          <option value="22">Categoría 22</option>
+          <option value="23">Categoría 23</option>
+          <option value="24">Categoría 24</option>
+        </select>
+      </div>
+      <div class="control-group" style="display:flex; align-items:flex-end; gap:8px;">
+        <button class="btn btn-primary" onclick="calcular()" style="width:100%">Calcular</button>
+      </div>
+    </div>
+
+    <!-- PARÁMETROS EDITABLES (años de antigüedad / permanencia) -->
+    <!-- Valores ocultos (se editan desde la tabla o se mantienen por defecto) -->
+    <input type="hidden" id="dias" value="24">
+    <input type="hidden" id="cantFallo" value="24">
+    <input type="hidden" id="permPct" value="3">
+    <input type="hidden" id="ant1" value="5">
+    <input type="hidden" id="ant2" value="1">
+    <input type="hidden" id="ant3" value="20">
+
+    <!-- BOTONES PARA ABRIR PANELES -->
+    <div style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
+      <button type="button" class="btn btn-outline" id="btnToggleParams" onclick="togglePanel('paramsPanel', 'btnToggleParams')">▸ Parámetros del agente</button>
+      <button type="button" class="btn btn-outline" id="btnToggleAumentos" onclick="togglePanel('aumentosPanel', 'btnToggleAumentos')">▸ Registrar aumentos</button>
+      <button type="button" class="btn btn-outline" id="btnToggleInflacion" onclick="togglePanel('inflacionPanel', 'btnToggleInflacion'); renderInflacion();">▸ Sueldo vs inflación</button>
+      <button type="button" class="btn btn-outline" id="btnToggleApariencia" onclick="togglePanel('aparienciaPanel', 'btnToggleApariencia')">▸ Apariencia y datos</button>
+    </div>
+
+    <!-- PANEL PARÁMETROS (cerrado por defecto) -->
+    <div class="params" id="paramsPanel" style="display:none; margin-bottom:16px;">
+      <h3>Parámetros del agente</h3>
+      <div class="params-grid">
+        <div class="control-group">
+          <label>Base Bonif. Pers. Juego</label>
+          <input type="text" id="basePersJuegoDisplay" value="$ 236.462" inputmode="numeric"
+                 onfocus="this.value = document.getElementById('basePersJuego').value; this.select()"
+                 onblur="actualizarBasePersJuego(this.value)">
+          <input type="hidden" id="basePersJuego" value="236462">
+        </div>
+        <div class="control-group">
+          <label>% Bonif. Pers. Juego</label>
+          <input type="number" id="pctPersJuego" value="0.37" step="0.01" min="0" max="1" onchange="calcular()">
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL REGISTRAR AUMENTOS (cerrado por defecto) -->
+    <div class="proyeccion" id="aumentosPanel" style="display:none; flex-direction:column; align-items:stretch; margin-bottom:16px;">
+      <h3>📅 Registrar aumentos</h3>
+
+      <div style="display:flex; gap:8px; margin-bottom:12px;">
+        <button type="button" class="btn btn-outline" id="tabSimple" onclick="mostrarTab('simple')" style="flex:1;">Aumento simple</button>
+        <button type="button" class="btn btn-warning" id="tabCuotas" onclick="mostrarTab('cuotas')" style="flex:1;">Aumento en cuotas</button>
+      </div>
+
+      <div id="panelSimple" style="display:none;">
+        <div style="display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end;">
+          <div class="control-group" style="flex:1; min-width:140px;">
+            <label>Nuevo mes</label>
+            <select id="nuevoMesNombre">
+              <option value="septiembre 26">septiembre 26</option>
+              <option value="octubre 26">octubre 26</option>
+              <option value="noviembre 26">noviembre 26</option>
+              <option value="diciembre 26">diciembre 26</option>
+              <option value="enero 27">enero 27</option>
+              <option value="febrero 27">febrero 27</option>
+              <option value="marzo 27">marzo 27</option>
+              <option value="abril 27">abril 27</option>
+              <option value="mayo 27">mayo 27</option>
+              <option value="junio 27">junio 27</option>
+              <option value="julio 27">julio 27</option>
+              <option value="agosto 27">agosto 27</option>
+              <option value="septiembre 27">septiembre 27</option>
+              <option value="octubre 27">octubre 27</option>
+              <option value="noviembre 27">noviembre 27</option>
+              <option value="diciembre 27">diciembre 27</option>
+            </select>
+          </div>
+          <div class="control-group" style="flex:0 0 110px;">
+            <label>Aumento %</label>
+            <input type="number" id="nuevoMesAumento" value="2" step="0.01" min="0">
+          </div>
+          <div class="control-group" style="flex:1; min-width:140px;">
+            <label>Sobre qué mes se aplica</label>
+            <select id="mesBaseAumento"></select>
+          </div>
+          <div class="control-group" style="flex:0 0 auto;">
+            <button class="btn btn-warning" onclick="registrarMes()">Registrar mes</button>
+          </div>
+          <div class="control-group" style="flex:0 0 auto;">
+            <button class="btn btn-outline" onclick="eliminarMesActual()">Eliminar mes seleccionado</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="panelCuotas">
+        <p style="font-size:0.82rem; color:var(--proyeccion-text); margin-bottom:12px; line-height:1.4;">
+          Ejemplo: <strong>“4% en dos partes: 2% en septiembre y 2% en octubre”</strong><br>
+          Los % se acumulan sobre el <strong>mismo mes base</strong>.
+        </p>
+        <div style="display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; margin-bottom:12px;">
+          <div class="control-group" style="flex:1; min-width:140px;">
+            <label>Mes base (referencia del aumento)</label>
+            <select id="cuotasMesBase"></select>
+          </div>
+          <div class="control-group" style="flex:0 0 120px;">
+            <label>% Total anunciado</label>
+            <input type="number" id="cuotasTotalPct" value="4" step="0.01" min="0" onchange="generarCamposCuotas()">
+          </div>
+          <div class="control-group" style="flex:0 0 100px;">
+            <label>Cantidad de cuotas</label>
+            <select id="cuotasCantidad" onchange="generarCamposCuotas()">
+              <option value="2" selected>2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+            </select>
+          </div>
+        </div>
+        <div id="camposCuotas" style="display:flex; flex-wrap:wrap; gap:12px; margin-bottom:12px;"></div>
+        <div style="display:flex; gap:10px;">
+          <button class="btn btn-warning" onclick="registrarCuotas()">Registrar todas las cuotas</button>
+          <button class="btn btn-outline" onclick="eliminarMesActual()">Eliminar mes seleccionado</button>
+        </div>
+      </div>
+
+      <!-- Meses futuros registrados (dentro de Registrar aumentos) -->
+      <div style="margin-top:18px; padding-top:14px; border-top:1px solid var(--proyeccion-border);">
+        <div style="font-size:0.8rem; font-weight:600; color:var(--proyeccion-text); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.03em;">Meses futuros registrados</div>
+        <div id="mesesRegistrados"></div>
+      </div>
+    </div>
+
+    <!-- PANEL SUELDO VS INFLACIÓN (cerrado por defecto) -->
+    <div id="inflacionPanel" class="params" style="display:none; margin-bottom:16px;">
+      <h3>Sueldo vs inflación</h3>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:12px; line-height:1.45;">
+        Criterio: el aumento del mes se compara con la <strong>inflación del mes anterior</strong>
+        (la que ya se conoce cuando rige el aumento).<br>
+        Ejemplo: aumento de septiembre vs IPC de agosto.
+      </p>
+      <div id="inflacionContenido">
+        <!-- se llena por JS -->
+      </div>
+    </div>
+
+
+    <!-- PANEL APARIENCIA Y DATOS (cerrado por defecto) -->
+    <div id="aparienciaPanel" class="params" style="display:none; margin-bottom:16px;">
+      <h3>Apariencia y datos</h3>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:14px; line-height:1.45;">
+        <strong>Uso diario:</strong> fondos cada vez más apagados (menos brillo, sin pasar a negro).<br>
+        <strong>Nocturnas:</strong> activan el tema oscuro.<br>
+        También podés respaldar o restaurar tus datos (meses, IPC, tema y parámetros).
+      </p>
+
+      <h4 style="font-size:0.85rem; color:var(--primary-dark); margin:8px 0 10px;">Paleta de fondo</h4>
+      <div id="paletaFondos" class="paleta-grid"></div>
+
+      <h4 style="font-size:0.85rem; color:var(--primary-dark); margin:18px 0 10px;">Comparar recibos</h4>
+      <p style="font-size:0.8rem; color:var(--muted); margin-bottom:12px; line-height:1.4;">
+        Abrí una ventana para comparar dos combinaciones (mes + categoría), por ejemplo
+        <em>agosto 26 · cat. 20</em> vs <em>abril 26 · cat. 19</em>. Usa los mismos parámetros de antigüedad y días del recibo actual.
+      </p>
+      <div style="margin-bottom:16px;">
+        <button type="button" class="btn btn-primary" onclick="abrirComparador()">↔ Comparar dos recibos</button>
+      </div>
+
+      <h4 style="font-size:0.85rem; color:var(--primary-dark); margin:18px 0 10px;">Exportar / importar datos</h4>
+      <p style="font-size:0.8rem; color:var(--muted); margin-bottom:12px; line-height:1.4;">
+        Exportá un archivo JSON con meses registrados, IPC, tema, paleta y parámetros del agente.
+        Sirve para respaldar o pasar los datos a otra PC / navegador.
+      </p>
+      <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center;">
+        <button type="button" class="btn btn-primary" onclick="exportarCache()">⬇ Exportar datos</button>
+        <label class="btn btn-outline" style="cursor:pointer; margin:0;">
+          ⬆ Importar datos
+          <input type="file" id="importCacheFile" accept="application/json,.json" style="display:none;" onchange="importarCache(event)">
+        </label>
+        <button type="button" class="btn btn-outline" onclick="limpiarCacheLocal()" style="border-color:var(--discount); color:var(--discount);">🗑 Limpiar datos locales</button>
+      </div>
+      <p id="cacheStatus" style="font-size:0.8rem; color:var(--muted); margin-top:10px;"></p>
+    </div>
+
+    <!-- RECIBO CALCULADO -->
+    <div class="recibo-card">
+      <div class="recibo-header">
+        <div class="recibo-title">RECIBO DE SUELDO</div>
+        <div class="recibo-neto" id="netoGrande">$ 0</div>
+        <div class="recibo-meta">
+          <div id="metaCat">Categoría 20</div>
+          <div id="metaMes">agosto 26</div>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Concepto</th>
+              <th class="num">Cant.</th>
+              <th class="num">Base</th>
+              <th class="num">%</th>
+              <th class="num">C/Aportes</th>
+              <th class="num">S/Aportes</th>
+              <th class="num">Descuentos</th>
+            </tr>
+          </thead>
+          <tbody id="tbody">
+            <!-- se llena por JS -->
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="5" class="subtotal-label">Subtotal</td>
+              <td class="num" id="subC">$ 0</td>
+              <td class="num" id="subS">$ 0</td>
+              <td class="num descuento" id="subD">$ 0</td>
+            </tr>
+            <tr class="neto-row">
+              <td colspan="7" class="neto-label">Neto a Cobrar</td>
+              <td class="num neto-amount" id="netoFinal">$ 0</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    
+    <!-- COMPARADOR (modal a pantalla completa) -->
+    <div id="comparadorModal" style="display:none; position:fixed; inset:0; z-index:2000; background:var(--bg); overflow:auto; padding:16px 12px 40px;">
+      <div style="max-width:1100px; margin:0 auto;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; flex-wrap:wrap;">
+          <h2 style="font-size:1.2rem; color:var(--primary-dark); margin:0;">Comparar recibos</h2>
+          <button type="button" class="btn btn-outline" onclick="cerrarComparador()">✕ Cerrar</button>
+        </div>
+        <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">
+          Misma antigüedad, días y bonificaciones que en el recibo principal.
+        </p>
+        <div style="display:grid; grid-template-columns:1fr auto 1fr; gap:14px; align-items:start;" class="comparador-grid">
+          <div class="params" style="margin:0;">
+            <h3 style="margin-top:0;">Recibo A</h3>
+            <div class="params-grid" style="margin-bottom:10px;">
+              <div class="control-group">
+                <label>Mes</label>
+                <select id="cmpMesA"></select>
+              </div>
+              <div class="control-group">
+                <label>Categoría</label>
+                <select id="cmpCatA"></select>
+              </div>
+            </div>
+            <div id="cmpNetoA" style="font-size:1.5rem; font-weight:800; color:var(--primary-dark); text-align:center; padding:12px; margin-bottom:10px; background:var(--neto-bg); border:2px solid var(--neto-border); border-radius:10px;">—</div>
+            <div id="cmpTablaA" style="overflow-x:auto;"></div>
+          </div>
+          <div style="align-self:center; font-size:1.3rem; font-weight:800; color:var(--primary); padding-top:40px;" class="comparador-vs">vs</div>
+          <div class="params" style="margin:0;">
+            <h3 style="margin-top:0;">Recibo B</h3>
+            <div class="params-grid" style="margin-bottom:10px;">
+              <div class="control-group">
+                <label>Mes</label>
+                <select id="cmpMesB"></select>
+              </div>
+              <div class="control-group">
+                <label>Categoría</label>
+                <select id="cmpCatB"></select>
+              </div>
+            </div>
+            <div id="cmpNetoB" style="font-size:1.5rem; font-weight:800; color:var(--primary-dark); text-align:center; padding:12px; margin-bottom:10px; background:var(--neto-bg); border:2px solid var(--neto-border); border-radius:10px;">—</div>
+            <div id="cmpTablaB" style="overflow-x:auto;"></div>
+          </div>
+        </div>
+        <div class="params" style="margin-top:16px;" id="cmpDiffBox"></div>
+        <p style="font-size:0.75rem; color:var(--muted); margin-top:12px; text-align:center;">
+          Descuentos: 14% + 4,8% + 4% = 22,8% sobre total C/Aportes.
+        </p>
+      </div>
+    </div>
+    <style>
+      @media (max-width: 800px) {
+        .comparador-grid { grid-template-columns: 1fr !important; }
+        .comparador-vs { display: none !important; }
+      }
+    </style>
+
+    <p class="footer-note">
+      Los cálculos de antigüedad, permanencia y aportes siguen la misma estructura del recibo original.<br>
+      Los descuentos se calculan sobre el total C/Aportes (14% + 4,8% + 4% = 22,8%).
+    </p>
+  </div>
+
+  <script>
+    // ========== DATOS ORIGINALES (inmutables) ==========
+    const dataOriginal = {
+      "enero 26": {
+        cats: {13:10315, 16:10902, 18:11719, 19:13420, 20:14217, 21:18857, 22:24051, 23:31274, 24:38975},
+        nuevoBono: 6830, bonifDecreto: 570544, falloCaja: 3468, aumentoMensual: 0
+      },
+      "febrero 26": {
+        cats: {13:10321, 16:10908, 18:11719, 19:13428, 20:14238, 21:18878, 22:24076, 23:31307, 24:39018},
+        nuevoBono: 7182, bonifDecreto: 571163, falloCaja: 3516, aumentoMensual: 0
+      },
+      "marzo 26": {
+        cats: {13:10831, 16:11447, 18:12305, 19:14091, 20:14928, 21:19800, 22:25254, 23:32837, 24:40924},
+        nuevoBono: 7172, bonifDecreto: 599072, falloCaja: 3516, aumentoMensual: 5.00
+      },
+      "abril 26": {
+        cats: {13:11086, 16:11716, 18:12594, 19:14422, 20:15279, 21:20265, 22:25847, 23:33609, 24:41885},
+        nuevoBono: 7340, bonifDecreto: 613140, falloCaja: 5223, aumentoMensual: 2.47
+      },
+      "mayo 26": {
+        cats: {13:11086, 16:11716, 18:12594, 19:14422, 20:15279, 21:20265, 22:25847, 23:33609, 24:41885},
+        nuevoBono: 7340, bonifDecreto: 613140, falloCaja: 5308, aumentoMensual: 0
+      },
+      "junio 26": {
+        cats: {13:11086, 16:11716, 18:12594, 19:14422, 20:15279, 21:20265, 22:25847, 23:33609, 24:41885},
+        nuevoBono: 7340, bonifDecreto: 613140, falloCaja: 5308, aumentoMensual: 0
+      },
+      "julio 26": {
+        cats: {13:11640, 16:12302, 18:13223, 19:15143, 20:16043, 21:21278, 22:27139, 23:35289, 24:43980},
+        nuevoBono: 7707, bonifDecreto: 643797, falloCaja: 5308, aumentoMensual: 5.00
+      },
+      "agosto 26": {
+        cats: {13:11861, 16:12536, 18:13475, 19:15431, 20:16348, 21:21684, 22:27656, 23:35961, 24:44817},
+        nuevoBono: 7854, bonifDecreto: 656060, falloCaja: 5573, aumentoMensual: 2.00
+      }
+    };
+
+    // Meses personalizados (se guardan en localStorage)
+    let dataCustom = JSON.parse(localStorage.getItem('reciboCustomMeses') || '{}');
+
+    // IPC mensual (usuario lo carga) — se guarda en localStorage
+    let ipcData = JSON.parse(localStorage.getItem('reciboIPC') || '{}');
+
+    // Meses agregados a mano a la tabla de inflación (sin aumento registrado)
+    let mesesInflacionExtra = JSON.parse(localStorage.getItem('reciboMesesInflacion') || '[]');
+    let chartInflacion = null;
+
+    // Orden cronológico de meses conocidos
+    const ORDEN_MESES = [
+      "enero 26","febrero 26","marzo 26","abril 26","mayo 26","junio 26","julio 26","agosto 26",
+      "septiembre 26","octubre 26","noviembre 26","diciembre 26",
+      "enero 27","febrero 27","marzo 27","abril 27","mayo 27","junio 27",
+      "julio 27","agosto 27","septiembre 27","octubre 27","noviembre 27","diciembre 27"
+    ];
+
+    // La comparación sueldo vs inflación arranca acá (evita distorsiones de meses previos)
+    const MES_INICIO_COMPARACION = "mayo 26";
+
+    // Estado actual de las bases
+    let basesActuales = null;
+
+    // Formateo argentino
+    function fmt(n) {
+      if (n === null || n === undefined || isNaN(n)) return '';
+      return n.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    }
+    function fmtDec(n, d = 2) {
+      if (n === null || n === undefined || isNaN(n)) return '';
+      return n.toLocaleString('es-AR', { minimumFractionDigits: d, maximumFractionDigits: d });
+    }
+    function money(n) {
+      if (n === null || n === undefined || isNaN(n)) return '';
+      return '$ ' + fmt(Math.round(n));
+    }
+
+    function getMes() { return document.getElementById('mes').value; }
+    function getCat() { return document.getElementById('categoria').value; }
+
+    function esMesCustom(mes) {
+      return !!dataCustom[mes];
+    }
+
+    function getDataMes(mes) {
+      if (dataCustom[mes]) return dataCustom[mes];
+      return dataOriginal[mes];
+    }
+
+    function cargarBases() {
+      const mes = getMes();
+      const cat = getCat();
+      const d = getDataMes(mes);
+      if (!d) return;
+
+      // Si es custom, las cats ya están calculadas por categoría
+      if (esMesCustom(mes)) {
+        basesActuales = {
+          asignacion: d.cats[cat],
+          nuevoBono: d.nuevoBono,
+          bonifDecreto: d.bonifDecreto,
+          falloCaja: d.falloCaja
+        };
+      } else {
+        basesActuales = {
+          asignacion: d.cats[cat],
+          nuevoBono: d.nuevoBono,
+          bonifDecreto: d.bonifDecreto,
+          falloCaja: d.falloCaja
+        };
+      }
+    }
+
+    function renderBases() {
+      // Los recuadros de bases fueron eliminados a pedido del usuario
+    }
+
+    function calcularNetoActual() {
+      if (!basesActuales) cargarBases();
+      const dias = parseFloat(document.getElementById('dias').value) || 24;
+      const cantFallo = parseFloat(document.getElementById('cantFallo').value) || 24;
+      const permPct = parseFloat(document.getElementById('permPct').value) || 0;
+      const ant1 = parseFloat(document.getElementById('ant1').value) || 0;
+      const ant2 = parseFloat(document.getElementById('ant2').value) || 0;
+      const ant3 = parseFloat(document.getElementById('ant3').value) || 0;
+      const basePersJuego = parseFloat(document.getElementById('basePersJuego').value) || 0;
+      const pctPersJuego = parseFloat(document.getElementById('pctPersJuego').value) || 0.37;
+
+      const catNum = parseInt(getCat(), 10);
+      const asigTotal = Math.round(basesActuales.asignacion * dias);
+      const respTotal = catNum >= 20 ? asigTotal : 0;
+      const basePct = asigTotal;
+      const permanencia = Math.round(basePct * (permPct / 100));
+      const ant1Monto = Math.round(ant1 * basePct * 0.01);
+      const ant2Monto = Math.round(ant2 * basePct * 0.02);
+      const ant3Monto = Math.round(ant3 * basePct * 0.03);
+      const nuevoBonoTotal = Math.round(basesActuales.nuevoBono * dias);
+      const falloTotal = Math.round(basesActuales.falloCaja * cantFallo);
+      const bonifTotal = Math.round(basesActuales.bonifDecreto);
+      const bonifPersJuego = Math.round(basePersJuego * pctPersJuego);
+
+      const totalC = asigTotal + respTotal + permanencia + ant1Monto + ant2Monto + ant3Monto +
+                     nuevoBonoTotal + bonifTotal + bonifPersJuego;
+      const totalS = falloTotal;
+      const totalD = Math.round(totalC * 0.14) + Math.round(totalC * 0.048) + Math.round(totalC * 0.04);
+      return totalC + totalS - totalD;
+    }
+
+    function calcular() {
+      if (!basesActuales) cargarBases();
+      if (!basesActuales) return;
+
+      const dias = parseFloat(document.getElementById('dias').value) || 24;
+      const cantFallo = parseFloat(document.getElementById('cantFallo').value) || 24;
+      const permPct = parseFloat(document.getElementById('permPct').value) || 0;
+      const ant1 = parseFloat(document.getElementById('ant1').value) || 0;
+      const ant2 = parseFloat(document.getElementById('ant2').value) || 0;
+      const ant3 = parseFloat(document.getElementById('ant3').value) || 0;
+
+      const asigUnit = basesActuales.asignacion;
+      const bonoUnit = basesActuales.nuevoBono;
+      const bonifDec = basesActuales.bonifDecreto;
+      const falloUnit = basesActuales.falloCaja;
+
+      const catNum = parseInt(getCat(), 10);
+      const asigTotal = Math.round(asigUnit * dias);
+      const respTotal = catNum >= 20 ? asigTotal : 0;
+      const basePct = asigTotal;
+      const permanencia = Math.round(basePct * (permPct / 100));
+      const ant1Monto = Math.round(ant1 * basePct * 0.01);
+      const ant2Monto = Math.round(ant2 * basePct * 0.02);
+      const ant3Monto = Math.round(ant3 * basePct * 0.03);
+      const nuevoBonoTotal = Math.round(bonoUnit * dias);
+      const falloTotal = Math.round(falloUnit * cantFallo);
+      const bonifTotal = Math.round(bonifDec);
+
+      const basePersJuego = parseFloat(document.getElementById('basePersJuego').value) || 0;
+      const pctPersJuego = parseFloat(document.getElementById('pctPersJuego').value) || 0.37;
+      const bonifPersJuego = Math.round(basePersJuego * pctPersJuego);
+
+      const totalC = asigTotal + respTotal + permanencia + ant1Monto + ant2Monto + ant3Monto +
+                     nuevoBonoTotal + bonifTotal + bonifPersJuego;
+      const totalS = falloTotal;
+      const descPrev = Math.round(totalC * 0.14);
+      const descObra = Math.round(totalC * 0.048);
+      const descGremio = Math.round(totalC * 0.04);
+      const totalD = descPrev + descObra + descGremio;
+      const neto = totalC + totalS - totalD;
+
+      const mesLabel = getMes() + (esMesCustom(getMes()) ? ' ★' : '');
+      document.getElementById('metaCat').textContent = 'Categoría ' + getCat();
+      document.getElementById('metaMes').textContent = mesLabel;
+      document.getElementById('netoGrande').textContent = money(neto);
+      document.getElementById('subC').textContent = money(totalC);
+      document.getElementById('subS').textContent = money(totalS);
+      document.getElementById('subD').textContent = money(totalD);
+      document.getElementById('netoFinal').textContent = money(neto);
+
+      const tbody = document.getElementById('tbody');
+      tbody.innerHTML = `
+        <tr>
+          <td class="codigo">1010</td>
+          <td>ASIGNACIÓN DE LA CATEGORÍA</td>
+          <td class="num"><input class="cell-edit" type="number" id="editDias" value="${dias}" step="1" onclick="this.select()" onblur="onEditCelda('dias', this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"></td>
+          <td class="num">${money(asigUnit)}</td>
+          <td class="num">100,00</td>
+          <td class="num">${money(asigTotal)}</td>
+          <td class="num"></td>
+          <td class="num"></td>
+        </tr>
+        <tr>
+          <td class="codigo">1080</td>
+          <td>RESPONSABILIDAD JERÁRQUICA</td>
+          <td class="num">${fmtDec(dias)}</td>
+          <td class="num"></td>
+          <td class="num"></td>
+          <td class="num">${money(respTotal)}</td>
+          <td class="num"></td>
+          <td class="num"></td>
+        </tr>
+        <tr>
+          <td class="codigo">1110</td>
+          <td>PERMANENCIA EN LA CATEGORÍA</td>
+          <td class="num"><input class="cell-edit" type="number" id="editPermPct" value="${permPct}" step="0.01" onclick="this.select()" onblur="onEditCelda('permPct', this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"></td>
+          <td class="num">${money(basePct)}</td>
+          <td class="num">${fmtDec(permPct)}</td>
+          <td class="num">${money(permanencia)}</td>
+          <td class="num"></td>
+          <td class="num"></td>
+        </tr>
+        <tr>
+          <td class="codigo">1130</td>
+          <td>ANTIGÜEDAD AL 1%</td>
+          <td class="num">${fmtDec(ant1)}</td>
+          <td class="num">${money(basePct)}</td>
+          <td class="num">1,00</td>
+          <td class="num">${money(ant1Monto)}</td>
+          <td class="num"></td>
+          <td class="num"></td>
+        </tr>
+        <tr>
+          <td class="codigo">1131</td>
+          <td>ANTIGÜEDAD AL 2%</td>
+          <td class="num">${fmtDec(ant2)}</td>
+          <td class="num">${money(basePct)}</td>
+          <td class="num">2,00</td>
+          <td class="num">${money(ant2Monto)}</td>
+          <td class="num"></td>
+          <td class="num"></td>
+        </tr>
+        <tr>
+          <td class="codigo">1132</td>
+          <td>ANTIGÜEDAD AL 3%</td>
+          <td class="num"><input class="cell-edit" type="number" id="editAnt3" value="${ant3}" step="1" onclick="this.select()" onblur="onEditCelda('ant3', this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"></td>
+          <td class="num">${money(basePct)}</td>
+          <td class="num">3,00</td>
+          <td class="num">${money(ant3Monto)}</td>
+          <td class="num"></td>
+          <td class="num"></td>
+        </tr>
+        <tr>
+          <td class="codigo">1190</td>
+          <td>SUPLEMENTO POR FALLAS DE CAJA</td>
+          <td class="num"><input class="cell-edit" type="number" id="editCantFallo" value="${cantFallo}" step="1" onclick="this.select()" onblur="onEditCelda('cantFallo', this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"></td>
+          <td class="num">${money(falloUnit)}</td>
+          <td class="num"></td>
+          <td class="num"></td>
+          <td class="num">${money(falloTotal)}</td>
+          <td class="num"></td>
+        </tr>
+        <tr>
+          <td class="codigo"></td>
+          <td>NUEVO BONO</td>
+          <td class="num">${fmtDec(dias)}</td>
+          <td class="num">${money(bonoUnit)}</td>
+          <td class="num"></td>
+          <td class="num">${money(nuevoBonoTotal)}</td>
+          <td class="num"></td>
+          <td class="num"></td>
+        </tr>
+        <tr>
+          <td class="codigo">1650</td>
+          <td>BONIF. REMUN. DECRETO 143/09</td>
+          <td class="num">${fmtDec(dias)}</td>
+          <td class="num">${money(bonifDec)}</td>
+          <td class="num"></td>
+          <td class="num">${money(bonifTotal)}</td>
+          <td class="num"></td>
+          <td class="num"></td>
+        </tr>
+        <tr>
+          <td class="codigo">1651</td>
+          <td>BONIF. REMUN PERS.JUEGO DECR</td>
+          <td class="num">${fmtDec(dias)}</td>
+          <td class="num">${money(basePersJuego)}</td>
+          <td class="num">${fmtDec(pctPersJuego * 100, 0)}%</td>
+          <td class="num">${money(bonifPersJuego)}</td>
+          <td class="num"></td>
+          <td class="num"></td>
+        </tr>
+        <tr>
+          <td class="codigo">2010</td>
+          <td>PREVISIONALES SUELDO APORTE PE</td>
+          <td class="num"></td>
+          <td class="num">${money(totalC)}</td>
+          <td class="num">14,00</td>
+          <td class="num"></td>
+          <td class="num"></td>
+          <td class="num descuento">${money(descPrev)}</td>
+        </tr>
+        <tr>
+          <td class="codigo">2100</td>
+          <td>OBRA SOCIAL I.O.M.A SUELDO APO</td>
+          <td class="num"></td>
+          <td class="num">${money(totalC)}</td>
+          <td class="num">4,80</td>
+          <td class="num"></td>
+          <td class="num"></td>
+          <td class="num descuento">${money(descObra)}</td>
+        </tr>
+        <tr>
+          <td class="codigo">2590</td>
+          <td>GREMIO A.E.C APORTE PERSONAL</td>
+          <td class="num"></td>
+          <td class="num">${money(totalC)}</td>
+          <td class="num">4,00</td>
+          <td class="num"></td>
+          <td class="num"></td>
+          <td class="num descuento">${money(descGremio)}</td>
+        </tr>
+      `;
+
+      renderBases();
+      renderMesesRegistrados();
+    }
+
+    // ========== EDICIÓN DIRECTA EN TABLA ==========
+    function onEditCelda(campo, valor) {
+      const n = parseFloat(String(valor).replace(',', '.'));
+      if (isNaN(n) || n < 0) {
+        calcular();
+        return;
+      }
+
+      if (!basesActuales) cargarBases();
+
+      if (campo === 'dias') {
+        document.getElementById('dias').value = n;
+      } else if (campo === 'cantFallo') {
+        document.getElementById('cantFallo').value = n;
+      } else if (campo === 'permPct') {
+        document.getElementById('permPct').value = n;
+      } else if (campo === 'ant3') {
+        document.getElementById('ant3').value = n;
+      }
+
+      calcular();
+    }
+
+    function togglePanel(panelId, btnId) {
+      const panel = document.getElementById(panelId);
+      const btn = document.getElementById(btnId);
+      const abierto = panel.style.display !== 'none';
+      panel.style.display = abierto ? 'none' : (panelId === 'aumentosPanel' ? 'flex' : 'block');
+      if (btn) {
+        const label = btn.textContent.replace(/^[▸▾]\s*/, '');
+        btn.textContent = (abierto ? '▸ ' : '▾ ') + label;
+      }
+      if (!abierto && panelId === 'aumentosPanel') {
+        mostrarTab('cuotas');
+        generarCamposCuotas();
+      }
+    }
+
+    function actualizarBasePersJuego(texto) {
+      const limpio = String(texto).replace(/[^\d]/g, '');
+      const n = parseInt(limpio, 10) || 0;
+      document.getElementById('basePersJuego').value = n;
+      document.getElementById('basePersJuegoDisplay').value = n ? ('$ ' + n.toLocaleString('es-AR')) : '$ 0';
+      calcular();
+    }
+
+    // ========== TABS Y CUOTAS ==========
+    const MESES_DISPONIBLES = [
+      "septiembre 26","octubre 26","noviembre 26","diciembre 26",
+      "enero 27","febrero 27","marzo 27","abril 27","mayo 27","junio 27",
+      "julio 27","agosto 27","septiembre 27","octubre 27","noviembre 27","diciembre 27"
+    ];
+
+    function mostrarTab(tab) {
+      const panelSimple = document.getElementById('panelSimple');
+      const panelCuotas = document.getElementById('panelCuotas');
+      const tabSimple = document.getElementById('tabSimple');
+      const tabCuotas = document.getElementById('tabCuotas');
+
+      if (tab === 'simple') {
+        panelSimple.style.display = 'block';
+        panelCuotas.style.display = 'none';
+        tabSimple.className = 'btn btn-warning';
+        tabSimple.style.flex = '1';
+        tabCuotas.className = 'btn btn-outline';
+        tabCuotas.style.flex = '1';
+      } else {
+        panelSimple.style.display = 'none';
+        panelCuotas.style.display = 'block';
+        tabCuotas.className = 'btn btn-warning';
+        tabCuotas.style.flex = '1';
+        tabSimple.className = 'btn btn-outline';
+        tabSimple.style.flex = '1';
+        generarCamposCuotas();
+      }
+    }
+
+    function generarCamposCuotas() {
+      const cant = parseInt(document.getElementById('cuotasCantidad').value) || 2;
+      const totalPct = parseFloat(document.getElementById('cuotasTotalPct').value) || 0;
+      const pctPorCuota = totalPct > 0 ? (totalPct / cant) : 0;
+      const cont = document.getElementById('camposCuotas');
+      cont.innerHTML = '';
+
+      for (let i = 1; i <= cant; i++) {
+        const div = document.createElement('div');
+        div.className = 'control-group';
+        div.style.flex = '1';
+        div.style.minWidth = '160px';
+        div.innerHTML = `
+          <label>Cuota ${i} – Mes</label>
+          <select id="cuotaMes${i}">
+            ${MESES_DISPONIBLES.map(m => `<option value="${m}">${m}</option>`).join('')}
+          </select>
+          <label style="margin-top:6px;">% de esta cuota</label>
+          <input type="number" id="cuotaPct${i}" value="${pctPorCuota.toFixed(2)}" step="0.01" min="0" oninput="actualizarSumaCuotas()">
+        `;
+        cont.appendChild(div);
+      }
+
+      if (cant >= 1) document.getElementById('cuotaMes1').value = 'septiembre 26';
+      if (cant >= 2) document.getElementById('cuotaMes2').value = 'octubre 26';
+      if (cant >= 3) document.getElementById('cuotaMes3').value = 'noviembre 26';
+      if (cant >= 4) document.getElementById('cuotaMes4').value = 'diciembre 26';
+
+      // Indicador de suma
+      const sumaDiv = document.createElement('div');
+      sumaDiv.id = 'sumaCuotasInfo';
+      sumaDiv.style.cssText = 'width:100%; font-size:0.85rem; font-weight:600; margin-top:4px;';
+      cont.appendChild(sumaDiv);
+      actualizarSumaCuotas();
+    }
+
+    function actualizarSumaCuotas() {
+      const cant = parseInt(document.getElementById('cuotasCantidad').value) || 2;
+      const totalPct = parseFloat(document.getElementById('cuotasTotalPct').value) || 0;
+      let suma = 0;
+      for (let i = 1; i <= cant; i++) {
+        const el = document.getElementById(`cuotaPct${i}`);
+        if (el) suma += parseFloat(el.value) || 0;
+      }
+      const info = document.getElementById('sumaCuotasInfo');
+      if (!info) return;
+      const ok = Math.abs(suma - totalPct) < 0.015;
+      info.style.color = ok ? 'var(--success)' : 'var(--discount)';
+      info.textContent = ok
+        ? `✓ Suma de cuotas: ${suma.toFixed(2)}% = total anunciado`
+        : `✗ Suma de cuotas: ${suma.toFixed(2)}%  ≠  total anunciado (${totalPct}%)`;
+    }
+
+    function registrarCuotas() {
+      const mesBase = document.getElementById('cuotasMesBase').value;
+      const cant = parseInt(document.getElementById('cuotasCantidad').value) || 2;
+
+      if (!mesBase) {
+        alert('Elegí el mes base de referencia');
+        return;
+      }
+
+      const dBase = getDataMes(mesBase);
+      if (!dBase) {
+        alert('No se encontraron datos del mes base');
+        return;
+      }
+
+      const totalAnunciado = parseFloat(document.getElementById('cuotasTotalPct').value) || 0;
+      const cuotas = [];
+      let sumaPct = 0;
+
+      for (let i = 1; i <= cant; i++) {
+        const mes = document.getElementById(`cuotaMes${i}`).value;
+        const pct = parseFloat(document.getElementById(`cuotaPct${i}`).value);
+        if (!mes || isNaN(pct) || pct < 0) {
+          alert(`Completá correctamente la cuota ${i}`);
+          return;
+        }
+        if (dataOriginal[mes] || dataCustom[mes]) {
+          alert(`El mes "${mes}" ya existe. Eliminalo primero o elegí otro.`);
+          return;
+        }
+        if (cuotas.some(c => c.mes === mes)) {
+          alert(`El mes "${mes}" está repetido en más de una cuota`);
+          return;
+        }
+        cuotas.push({ mes, pct });
+        sumaPct += pct;
+      }
+
+      // La suma de las cuotas debe coincidir con el total anunciado
+      if (Math.abs(sumaPct - totalAnunciado) >= 0.015) {
+        alert(`La suma de los % de las cuotas (${sumaPct.toFixed(2)}%) no coincide con el total anunciado (${totalAnunciado}%).\n\nAjustá los valores antes de registrar.`);
+        return;
+      }
+
+      // Los % se ACUMULAN sobre el mismo mes base
+      // Ejemplo: 2% + 2% → septiembre = base×1.02  |  octubre = base×1.04
+      let acumulado = 0;
+      const resumen = [];
+
+      cuotas.forEach(c => {
+        acumulado += c.pct;
+        const factor = 1 + (acumulado / 100);
+
+        const nuevasCats = {};
+        for (const cat of Object.keys(dBase.cats)) {
+          nuevasCats[cat] = Math.round(dBase.cats[cat] * factor);
+        }
+
+        dataCustom[c.mes] = {
+          cats: nuevasCats,
+          nuevoBono: Math.round(dBase.nuevoBono * factor),
+          bonifDecreto: Math.round(dBase.bonifDecreto * factor),
+          falloCaja: Math.round(dBase.falloCaja * factor),
+          aumentoAplicado: c.pct,           // % de esta cuota
+          aumentoAcumulado: acumulado,      // % total hasta este mes
+          basadoEn: mesBase,
+          esCuota: true,
+          fechaRegistro: new Date().toLocaleString('es-AR')
+        };
+
+        resumen.push(`${c.mes}: +${c.pct}%  →  acumulado ${acumulado}% sobre ${mesBase}`);
+      });
+
+      localStorage.setItem('reciboCustomMeses', JSON.stringify(dataCustom));
+      actualizarSelectMeses();
+
+      document.getElementById('mes').value = cuotas[cuotas.length - 1].mes;
+      cargarBases();
+      calcular();
+
+      // Asegurar panel de aumentos abierto
+      const panelA = document.getElementById('aumentosPanel');
+      const btnA = document.getElementById('btnToggleAumentos');
+      if (panelA && panelA.style.display === 'none') {
+        panelA.style.display = 'flex';
+        if (btnA) btnA.textContent = '▾ Registrar aumentos';
+      }
+
+      alert(`Cuotas registradas correctamente:\n\n${resumen.join('\n')}`);
+    }
+
+    // ========== REGISTRAR MES SIMPLE ==========
+    function registrarMes() {
+      const nombre = document.getElementById('nuevoMesNombre').value.trim();
+      const pct = parseFloat(document.getElementById('nuevoMesAumento').value);
+      const mesBase = document.getElementById('mesBaseAumento').value;
+
+      if (!nombre) {
+        alert('Ingresá el nombre del mes (ej: septiembre 26)');
+        return;
+      }
+      if (isNaN(pct) || pct < 0) {
+        alert('Ingresá un porcentaje de aumento válido');
+        return;
+      }
+      if (!mesBase) {
+        alert('Elegí el mes base sobre el que se aplica el aumento');
+        return;
+      }
+      if (dataOriginal[nombre] || dataCustom[nombre]) {
+        alert('Ese mes ya existe. Elegí otro nombre o eliminá el anterior.');
+        return;
+      }
+
+      const dBase = getDataMes(mesBase);
+      if (!dBase) {
+        alert('No se encontraron datos del mes base seleccionado');
+        return;
+      }
+
+      const factor = 1 + (pct / 100);
+
+      // Aplicamos el % sobre el mes base elegido (todas las categorías)
+      const nuevasCats = {};
+      for (const cat of Object.keys(dBase.cats)) {
+        nuevasCats[cat] = Math.round(dBase.cats[cat] * factor);
+      }
+
+      dataCustom[nombre] = {
+        cats: nuevasCats,
+        nuevoBono: Math.round(dBase.nuevoBono * factor),
+        bonifDecreto: Math.round(dBase.bonifDecreto * factor),
+        falloCaja: Math.round(dBase.falloCaja * factor),
+        aumentoAplicado: pct,
+        basadoEn: mesBase,
+        fechaRegistro: new Date().toLocaleString('es-AR')
+      };
+
+      localStorage.setItem('reciboCustomMeses', JSON.stringify(dataCustom));
+
+      actualizarSelectMeses();
+      document.getElementById('mes').value = nombre;
+      cargarBases();
+      calcular();
+
+      document.getElementById('nuevoMesAumento').value = '2';
+
+      const panelA2 = document.getElementById('aumentosPanel');
+      const btnA2 = document.getElementById('btnToggleAumentos');
+      if (panelA2 && panelA2.style.display === 'none') {
+        panelA2.style.display = 'flex';
+        if (btnA2) btnA2.textContent = '▾ Registrar aumentos';
+      }
+
+      alert(`Mes "${nombre}" registrado con +${pct}% sobre "${mesBase}".\nYa podés seleccionarlo cuando quieras.`);
+    }
+
+    function eliminarMesActual() {
+      const mes = getMes();
+      if (!esMesCustom(mes)) {
+        alert('Solo se pueden eliminar meses que vos registraste (no los originales).');
+        return;
+      }
+      if (!confirm(`¿Eliminar el mes "${mes}"?`)) return;
+
+      delete dataCustom[mes];
+      localStorage.setItem('reciboCustomMeses', JSON.stringify(dataCustom));
+      actualizarSelectMeses();
+      document.getElementById('mes').value = 'agosto 26';
+      cargarBases();
+      calcular();
+    }
+
+    function actualizarSelectMeses() {
+      const select = document.getElementById('mes');
+      const selectBase = document.getElementById('mesBaseAumento');
+      const selectCuotasBase = document.getElementById('cuotasMesBase');
+      const valorActual = select.value;
+      const valorBaseActual = selectBase ? selectBase.value : 'agosto 26';
+      const valorCuotasBase = selectCuotasBase ? selectCuotasBase.value : 'agosto 26';
+
+      select.innerHTML = '';
+      if (selectBase) selectBase.innerHTML = '';
+      if (selectCuotasBase) selectCuotasBase.innerHTML = '';
+
+      function agregarOpcion(m, esCustom) {
+        const texto = esCustom ? m + ' ★' : m;
+
+        const opt = document.createElement('option');
+        opt.value = m;
+        opt.textContent = texto;
+        select.appendChild(opt);
+
+        if (selectBase) {
+          const optB = document.createElement('option');
+          optB.value = m;
+          optB.textContent = texto;
+          selectBase.appendChild(optB);
+        }
+        if (selectCuotasBase) {
+          const optC = document.createElement('option');
+          optC.value = m;
+          optC.textContent = texto;
+          selectCuotasBase.appendChild(optC);
+        }
+      }
+
+      Object.keys(dataOriginal).forEach(m => agregarOpcion(m, false));
+      Object.keys(dataCustom).forEach(m => agregarOpcion(m, true));
+
+      // Restaurar selecciones
+      if ([...select.options].some(o => o.value === valorActual)) {
+        select.value = valorActual;
+      } else {
+        select.value = 'agosto 26';
+      }
+      if (selectBase) {
+        selectBase.value = [...selectBase.options].some(o => o.value === valorBaseActual) ? valorBaseActual : 'agosto 26';
+      }
+      if (selectCuotasBase) {
+        selectCuotasBase.value = [...selectCuotasBase.options].some(o => o.value === valorCuotasBase) ? valorCuotasBase : 'agosto 26';
+      }
+    }
+
+    function renderMesesRegistrados() {
+      const cont = document.getElementById('mesesRegistrados');
+      if (!cont) return;
+      const keys = Object.keys(dataCustom);
+      if (keys.length === 0) {
+        cont.innerHTML = `<div style="color:var(--proyeccion-text); font-size:0.88rem; opacity:0.85;">No hay meses futuros registrados todavía.</div>`;
+        return;
+      }
+
+      let html = `<div style="display:flex; flex-wrap:wrap; gap:10px;">`;
+
+      keys.forEach(m => {
+        const d = dataCustom[m];
+        // Calculamos neto aproximado con la categoría actual
+        const cat = getCat();
+        const tempBases = {
+          asignacion: d.cats[cat],
+          nuevoBono: d.nuevoBono,
+          bonifDecreto: d.bonifDecreto,
+          falloCaja: d.falloCaja
+        };
+        // Guardamos temporalmente
+        const oldBases = basesActuales;
+        basesActuales = tempBases;
+        const neto = calcularNetoActual();
+        basesActuales = oldBases;
+
+        html += `
+          <div style="background:var(--primary-light); border:1px solid var(--border); border-radius:8px; padding:10px 14px; min-width:160px; cursor:pointer;"
+               onclick="document.getElementById('mes').value='${m}'; cargarBases(); calcular();">
+            <div style="font-weight:700; color:var(--primary);">${m}</div>
+            <div style="font-size:0.75rem; color:var(--muted);">
+              ${d.aumentoAcumulado ? `+${d.aumentoAplicado}% (acum. ${d.aumentoAcumulado}%)` : `+${d.aumentoAplicado}%`} sobre ${d.basadoEn}
+            </div>
+            <div style="font-size:1.05rem; font-weight:800; color:var(--primary-dark); margin-top:4px;">${money(neto)}</div>
+          </div>`;
+      });
+
+      html += `</div>`;
+      cont.innerHTML = html;
+    }
+
+    // Eventos
+    document.getElementById('mes').addEventListener('change', () => {
+      cargarBases();
+      calcular();
+    });
+    document.getElementById('categoria').addEventListener('change', () => {
+      cargarBases();
+      calcular();
+    });
+
+    // ========== SUELDO VS INFLACIÓN ==========
+    function mesAnterior(mes) {
+      const idx = ORDEN_MESES.indexOf(mes);
+      if (idx <= 0) return null;
+      return ORDEN_MESES[idx - 1];
+    }
+
+    // Nivel real de sueldo (asignación de la categoría elegida).
+    // Así, si sept = ago×1.05 y oct = ago×1.07, el índice no hace 1.05×1.02.
+    function getNivelSueldo(mes) {
+      const cat = getCat();
+      const d = getDataMes(mes);
+      if (!d || !d.cats || d.cats[cat] == null) return null;
+      return d.cats[cat];
+    }
+
+    // Variación mes a mes REAL del sueldo (según bases), no el % anunciado de la cuota
+    function getAumentoMoM(mes, mesPrev) {
+      const n = getNivelSueldo(mes);
+      const p = mesPrev ? getNivelSueldo(mesPrev) : null;
+      if (n == null || p == null || p === 0) return 0;
+      return ((n / p) - 1) * 100;
+    }
+
+    // % de la cuota / tramo anunciado (informativo)
+    function getAumentoAnunciado(mes) {
+      if (dataCustom[mes] && dataCustom[mes].aumentoAplicado != null) {
+        return parseFloat(dataCustom[mes].aumentoAplicado) || 0;
+      }
+      if (dataOriginal[mes] && dataOriginal[mes].aumentoMensual != null) {
+        return parseFloat(dataOriginal[mes].aumentoMensual) || 0;
+      }
+      return 0;
+    }
+
+    function guardarIPC(mes, valor) {
+      const n = parseFloat(String(valor).replace(',', '.'));
+      if (valor === '' || isNaN(n)) {
+        delete ipcData[mes];
+      } else {
+        ipcData[mes] = n;
+      }
+      localStorage.setItem('reciboIPC', JSON.stringify(ipcData));
+      renderInflacion();
+    }
+
+    function agregarMesInflacion() {
+      const sel = document.getElementById('nuevoMesInflacion');
+      if (!sel || !sel.value) return;
+      const mes = sel.value;
+      if (!mesesInflacionExtra.includes(mes)) {
+        mesesInflacionExtra.push(mes);
+        localStorage.setItem('reciboMesesInflacion', JSON.stringify(mesesInflacionExtra));
+      }
+      renderInflacion();
+    }
+
+    function quitarMesInflacion(mes) {
+      const idx = mesesInflacionExtra.indexOf(mes);
+      if (idx >= 0) {
+        mesesInflacionExtra.splice(idx, 1);
+        localStorage.setItem('reciboMesesInflacion', JSON.stringify(mesesInflacionExtra));
+      }
+      if (ipcData[mes] != null) {
+        delete ipcData[mes];
+        localStorage.setItem('reciboIPC', JSON.stringify(ipcData));
+      }
+      renderInflacion();
+    }
+
+    function renderInflacion() {
+      const cont = document.getElementById('inflacionContenido');
+      if (!cont) return;
+
+      const idxInicio = ORDEN_MESES.indexOf(MES_INICIO_COMPARACION);
+      // Meses a mostrar: los que ya tienen datos de sueldo, más los que el
+      // usuario agregó a mano con "+ Agregar mes" (aunque no tengan aumento).
+      const mesesActivos = ORDEN_MESES
+        .filter((m, i) => i >= idxInicio && (dataOriginal[m] || dataCustom[m] || mesesInflacionExtra.includes(m)));
+      if (mesesActivos.length === 0) {
+        cont.innerHTML = '<p style="color:var(--muted);">No hay meses para comparar.</p>';
+        return;
+      }
+
+      // Selector para agregar un mes nuevo (que todavía no esté en la lista)
+      const opcionesNuevoMes = ORDEN_MESES
+        .filter((m, i) => i >= idxInicio && !mesesActivos.includes(m));
+      const selectorAgregarHTML = opcionesNuevoMes.length
+        ? `
+          <div style="display:flex; gap:8px; align-items:flex-end; margin-bottom:14px; flex-wrap:wrap;">
+            <div class="control-group" style="flex:0 0 200px;">
+              <label>Agregar mes a la tabla</label>
+              <select id="nuevoMesInflacion">
+                ${opcionesNuevoMes.map(m => `<option value="${m}">${m}</option>`).join('')}
+              </select>
+            </div>
+            <button type="button" class="btn btn-outline" onclick="agregarMesInflacion()">+ Agregar mes</button>
+          </div>
+        `
+        : '';
+
+      const mesBase = mesesActivos[0];
+      const nivelBase = getNivelSueldo(mesBase);
+
+      const labels = [];
+      const dataSueldo = [];
+      const dataIPC = [];
+      const dataPoder = [];
+
+      let html = `
+        <p style="font-size:0.8rem; color:var(--muted); margin-bottom:10px; line-height:1.45;">
+          Los tres valores usan la <strong>misma base 100</strong> (a partir de <strong>mayo 26</strong>).<br>
+          <strong>Poder de compra</strong> = Índice sueldo ÷ Índice IPC × 100.
+          Solo se calcula cuando cargaste el IPC del mes anterior; si no hay IPC, queda en — (no sigue al sueldo nominal).
+        </p>
+        ${selectorAgregarHTML}
+        <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:0.84rem;">
+          <thead>
+            <tr style="background:var(--primary); color:#fff;">
+              <th style="padding:8px; text-align:left;">Mes</th>
+              <th style="padding:8px; text-align:right;">% anunciado</th>
+              <th style="padding:8px; text-align:right;">Var. sueldo MoM %</th>
+              <th style="padding:8px; text-align:right;">IPC del mes %</th>
+              <th style="padding:8px; text-align:right;">IPC mes ant. %</th>
+              <th style="padding:8px; text-align:right;">Var. real %</th>
+              <th style="padding:8px; text-align:center;">¿Te cubrió?</th>
+              <th style="padding:8px; text-align:right;">Índice sueldo</th>
+              <th style="padding:8px; text-align:right;">Índice IPC*</th>
+              <th style="padding:8px; text-align:right;">Poder de compra</th>
+              <th style="padding:8px;"></th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      // idxIPC solo avanza con IPC real del mes anterior.
+      // poder solo existe cuando hubo avance de IPC (o mes base).
+      let idxIPC = 100;
+
+      mesesActivos.forEach((mes, i) => {
+        const prev = i > 0 ? mesesActivos[i - 1] : null;
+        const anunciado = getAumentoAnunciado(mes);
+        const nivelActualTmp = getNivelSueldo(mes);
+        const nivelPrevTmp = prev != null ? getNivelSueldo(prev) : null;
+        const momValido = i > 0 && nivelActualTmp != null && nivelPrevTmp != null;
+        const mom = i === 0 ? 0 : (momValido ? getAumentoMoM(mes, prev) : null);
+        const ipcMes = ipcData[mes];
+        const ipcPrev = prev != null ? ipcData[prev] : null;
+
+        const nivel = getNivelSueldo(mes);
+        const idxSueldo = (nivelBase && nivel != null) ? (nivel / nivelBase * 100) : (i === 0 ? 100 : null);
+
+        let ipcDisponible = false;
+        if (i === 0) {
+          idxIPC = 100;
+          ipcDisponible = true;
+        } else if (ipcPrev != null && !isNaN(Number(ipcPrev))) {
+          idxIPC = idxIPC * (1 + Number(ipcPrev) / 100);
+          ipcDisponible = true;
+        } else {
+          // Sin IPC del mes anterior: no actualizamos idxIPC y no calculamos poder
+          ipcDisponible = false;
+        }
+
+        let varReal = null;
+        let cubrio = null;
+        if (momValido && ipcPrev != null && !isNaN(Number(ipcPrev))) {
+          varReal = ((1 + mom / 100) / (1 + Number(ipcPrev) / 100) - 1) * 100;
+          cubrio = mom >= Number(ipcPrev) - 0.005;
+        }
+
+        // Poder de compra:
+        // - mes base: 100
+        // - solo si este mes tuvo IPC del anterior para actualizar la cadena
+        // - si faltan IPC intermedios, no se muestra (evita el "120%" engañoso)
+        let poder = null;
+        if (i === 0) {
+          poder = 100;
+        } else if (ipcDisponible && idxSueldo != null) {
+          poder = idxSueldo / idxIPC * 100;
+        }
+
+        labels.push(mes.replace(' 26', '/26').replace(' 27', '/27'));
+        dataSueldo.push(idxSueldo != null ? +idxSueldo.toFixed(2) : null);
+        // En el gráfico, el IPC solo se dibuja cuando la cadena está completa este mes
+        dataIPC.push(ipcDisponible ? +idxIPC.toFixed(2) : null);
+        dataPoder.push(poder != null ? +poder.toFixed(2) : null);
+
+        const bg = i % 2 === 0 ? 'var(--table-even)' : 'var(--card)';
+        const colorReal = varReal == null ? 'var(--muted)' : (varReal >= 0 ? 'var(--success)' : 'var(--discount)');
+        const badge = cubrio == null
+          ? '<span style="color:var(--muted);">—</span>'
+          : cubrio
+            ? '<span style="background:var(--neto-bg); color:var(--success); padding:2px 8px; border-radius:99px; font-weight:600; font-size:0.75rem;">✓ Sí</span>'
+            : '<span style="background:color-mix(in srgb, var(--discount) 20%, transparent); color:var(--discount); padding:2px 8px; border-radius:99px; font-weight:600; font-size:0.75rem;">✗ No</span>';
+
+        const idxIPCTxt = ipcDisponible ? idxIPC.toFixed(2) : '—';
+        const poderTxt = poder != null ? poder.toFixed(2) : '—';
+        const poderColor = poder == null ? 'var(--muted)' : (poder >= 99.995 ? 'var(--success)' : 'var(--discount)');
+
+        html += `
+          <tr style="background:${bg}; border-bottom:1px solid var(--border);">
+            <td style="padding:7px 8px; font-weight:600;">${mes}${dataCustom[mes] ? ' ★' : ''}</td>
+            <td style="padding:7px 8px; text-align:right; color:var(--muted);">${anunciado ? anunciado.toFixed(2) : '0,00'}</td>
+            <td style="padding:7px 8px; text-align:right; font-weight:600;">${(i === 0 || mom == null) ? '—' : mom.toFixed(2)}</td>
+            <td style="padding:7px 8px; text-align:right;">
+              <input class="cell-edit" type="number" step="0.01" min="0"
+                style="max-width:90px; margin-left:auto;"
+                value="${ipcMes != null ? ipcMes : ''}"
+                placeholder="—"
+                onblur="guardarIPC('${mes}', this.value)"
+                onclick="this.select()">
+            </td>
+            <td style="padding:7px 8px; text-align:right; color:var(--muted);">
+              ${ipcPrev != null ? Number(ipcPrev).toFixed(2) : '—'}
+            </td>
+            <td style="padding:7px 8px; text-align:right; font-weight:700; color:${colorReal};">
+              ${varReal != null ? (varReal >= 0 ? '+' : '') + varReal.toFixed(2) : '—'}
+            </td>
+            <td style="padding:7px 8px; text-align:center;">${badge}</td>
+            <td style="padding:7px 8px; text-align:right;">${idxSueldo != null ? idxSueldo.toFixed(2) : '—'}</td>
+            <td style="padding:7px 8px; text-align:right;">${idxIPCTxt}</td>
+            <td style="padding:7px 8px; text-align:right; font-weight:700; color:${poderColor};">${poderTxt}</td>
+            <td style="padding:7px 8px; text-align:center;">${
+              (!dataOriginal[mes] && !dataCustom[mes] && mesesInflacionExtra.includes(mes))
+                ? `<button type="button" class="btn btn-outline" style="padding:2px 8px; font-size:0.75rem;" title="Quitar mes" onclick="quitarMesInflacion('${mes}')">✕</button>`
+                : ''
+            }</td>
+          </tr>
+        `;
+      });
+
+      html += `
+          </tbody>
+        </table>
+        </div>
+
+        <div style="margin-top:20px; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px;">
+          <div style="font-size:0.85rem; font-weight:700; color:var(--primary); margin-bottom:8px;">Evolución (misma escala, base 100)</div>
+          <p style="font-size:0.75rem; color:var(--muted); margin-bottom:12px;">
+            Las tres series comparten el eje. Si no hay IPC, el poder de compra no se dibuja (evita el falso “120%”).
+          </p>
+          <div style="position:relative; height:300px; width:100%;">
+            <canvas id="chartInflacion"></canvas>
+          </div>
+        </div>
+
+        <p style="font-size:0.75rem; color:var(--muted); margin-top:10px; line-height:1.4;">
+          <strong>Índice sueldo</strong>: cuánto subió el valor de tu categoría desde el primer mes (puede ser 115, 120… aunque no haya IPC).<br>
+          <strong>Índice IPC</strong>: solo avanza cuando cargás inflación del mes anterior.<br>
+          <strong>Poder de compra</strong>: relación entre ambos. En el mes base vale 100. Sin IPC no se calcula (—), porque no se puede saber.
+        </p>
+      `;
+
+      cont.innerHTML = html;
+      dibujarChartInflacion(labels, dataSueldo, dataIPC, dataPoder);
+    }
+
+    function dibujarChartInflacion(labels, dataSueldo, dataIPC, dataPoder) {
+      const canvas = document.getElementById('chartInflacion');
+      if (!canvas || typeof Chart === 'undefined') return;
+
+      if (chartInflacion) {
+        chartInflacion.destroy();
+        chartInflacion = null;
+      }
+
+      chartInflacion = new Chart(canvas, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: 'Índice sueldo',
+              data: dataSueldo,
+              borderColor: '#0f766e',
+              backgroundColor: 'rgba(15, 118, 110, 0.08)',
+              borderWidth: 2.5,
+              pointRadius: 4,
+              pointBackgroundColor: '#0f766e',
+              tension: 0.25,
+              spanGaps: false
+            },
+            {
+              label: 'Índice IPC (mes ant.)',
+              data: dataIPC,
+              borderColor: '#dc2626',
+              borderWidth: 2.5,
+              pointRadius: 4,
+              pointBackgroundColor: '#dc2626',
+              borderDash: [6, 4],
+              tension: 0.25,
+              spanGaps: false
+            },
+            {
+              label: 'Poder de compra',
+              data: dataPoder,
+              borderColor: '#2563eb',
+              borderWidth: 2.5,
+              pointRadius: 4,
+              pointBackgroundColor: '#2563eb',
+              tension: 0.25,
+              spanGaps: false
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: { boxWidth: 12, usePointStyle: true, font: { size: 12 } }
+            },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y != null ? ctx.parsed.y.toFixed(2) : '—'}`
+              }
+            }
+          },
+          scales: {
+            y: {
+              title: { display: true, text: 'Base 100 = primer mes', font: { size: 11 } },
+              grid: { color: 'rgba(0,0,0,0.05)' }
+            },
+            x: {
+              ticks: { maxRotation: 45, font: { size: 10 } },
+              grid: { display: false }
+            }
+          }
+        }
+      });
+    }
+
+    // Inicial
+    actualizarSelectMeses();
+    cargarBases();
+    calcular();
+  </script>
+
+
+  <script>
+
+    // ========== PALETAS DE FONDO ==========
+    const PALETAS_FONDO = {
+      // --- Uso diario (modo claro): de más claro a más apagado ---
+      suave: {
+        label: 'Suave',
+        light: { g1: '#F4F6F5', g2: '#EEF2F1', g3: '#F0F4F3', input: '#EEF3F2' },
+        dark:  { g1: '#0F1413', g2: '#121918', g3: '#0F1413', input: '#151C1B' }
+      },
+      menta: {
+        label: 'Menta',
+        light: { g1: '#E8F5F1', g2: '#DCEEE8', g3: '#E3F2ED', input: '#D5E8E2' },
+        dark:  { g1: '#0C1614', g2: '#0F1C19', g3: '#0C1614', input: '#13221E' }
+      },
+      niebla: {
+        label: 'Niebla',
+        light: { g1: '#E4E8E7', g2: '#D8DDDC', g3: '#E0E4E3', input: '#CED4D3' },
+        dark:  { g1: '#121616', g2: '#171C1C', g3: '#121616', input: '#1C2222' }
+      },
+      pizarra: {
+        label: 'Pizarra',
+        light: { g1: '#D5DBDA', g2: '#C8CFCE', g3: '#D0D6D5', input: '#BCC3C2' },
+        dark:  { g1: '#141818', g2: '#1A1F1F', g3: '#141818', input: '#222828' }
+      },
+      arena: {
+        label: 'Arena',
+        light: { g1: '#EDE8DF', g2: '#E3DDD2', g3: '#E9E3D9', input: '#D9D2C6' },
+        dark:  { g1: '#141210', g2: '#1A1814', g3: '#141210', input: '#1F1C18' }
+      },
+      oceano: {
+        label: 'Océano',
+        light: { g1: '#DDE6EC', g2: '#D0DBE3', g3: '#D8E2E9', input: '#C5D2DB' },
+        dark:  { g1: '#0E1318', g2: '#121820', g3: '#0E1318', input: '#161E26' }
+      },
+      // --- Solo modo oscuro (noche profunda) ---
+      noche: {
+        label: 'Noche',
+        light: { g1: '#1A2220', g2: '#151C1A', g3: '#1E2624', input: '#24302D' },
+        dark:  { g1: '#0A0F0E', g2: '#0E1513', g3: '#0A0F0E', input: '#141C1A' }
+      },
+      carbon: {
+        label: 'Carbón',
+        light: { g1: '#1E1E1E', g2: '#181818', g3: '#242424', input: '#2A2A2A' },
+        dark:  { g1: '#0A0A0A', g2: '#111111', g3: '#0A0A0A', input: '#1A1A1A' }
+      },
+      bosque: {
+        label: 'Bosque',
+        light: { g1: '#1A2420', g2: '#141C19', g3: '#1E2A25', input: '#24332D' },
+        dark:  { g1: '#08100C', g2: '#0C1611', g3: '#08100C', input: '#14201A' }
+      }
+    };
+
+    // Paletas que fuerzan tema oscuro (el resto son de uso diario)
+    const PALETAS_OSCURAS = ['noche', 'carbon', 'bosque'];
+
+    function aplicarPaleta(nombre) {
+      const p = PALETAS_FONDO[nombre] || PALETAS_FONDO.suave;
+      const esOscura = PALETAS_OSCURAS.includes(nombre);
+
+      if (esOscura) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('reciboTheme', 'dark');
+        const tbtn = document.getElementById('themeToggle');
+        if (tbtn) tbtn.textContent = '☀️';
+        const metaTheme = document.querySelector('meta[name="theme-color"]');
+        if (metaTheme) metaTheme.setAttribute('content', '#0F1413');
+      }
+
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      // En modo claro usamos light; en oscuro, dark. Las diarias también cambian de noche.
+      const c = isDark ? p.dark : p.light;
+      const root = document.documentElement;
+      root.style.setProperty('--bg-gradient-1', c.g1);
+      root.style.setProperty('--bg-gradient-2', c.g2);
+      root.style.setProperty('--bg-gradient-3', c.g3);
+      root.style.setProperty('--bg', c.g1);
+      root.style.setProperty('--input-bg', c.input);
+      // En diarias más apagadas, suavizar un poco las tarjetas
+      if (!isDark && ['niebla', 'pizarra', 'menta', 'oceano', 'arena'].includes(nombre)) {
+        root.style.setProperty('--card', nombre === 'pizarra' ? '#E8EBEA' : '#F2F4F3');
+        root.style.setProperty('--table-even', nombre === 'pizarra' ? '#DCE1E0' : '#E8ECEB');
+      } else if (!isDark) {
+        root.style.setProperty('--card', '#FAFBFA');
+        root.style.setProperty('--table-even', '#F2F5F4');
+      } else {
+        root.style.removeProperty('--card');
+        root.style.removeProperty('--table-even');
+      }
+
+      localStorage.setItem('reciboPaleta', nombre);
+      document.querySelectorAll('.paleta-swatch').forEach(el => {
+        el.classList.toggle('active', el.dataset.paleta === nombre);
+      });
+      const st = document.getElementById('cacheStatus');
+      if (st) {
+        st.textContent = esOscura
+          ? 'Paleta aplicada: ' + p.label + ' (modo nocturno)'
+          : 'Paleta diaria aplicada: ' + p.label;
+      }
+    }
+
+    function renderPaletas() {
+      const cont = document.getElementById('paletaFondos');
+      if (!cont) return;
+      const actual = localStorage.getItem('reciboPaleta') || 'suave';
+      cont.innerHTML = '';
+
+      const diarias = ['suave', 'menta', 'niebla', 'pizarra', 'arena', 'oceano'];
+      const nocturnas = ['noche', 'carbon', 'bosque'];
+
+      function addGroup(title, keys) {
+        const lab = document.createElement('div');
+        lab.style.cssText = 'width:100%;font-size:0.72rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin:4px 0 2px;';
+        lab.textContent = title;
+        cont.appendChild(lab);
+        keys.forEach(key => {
+          const p = PALETAS_FONDO[key];
+          if (!p) return;
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'paleta-swatch' + (key === actual ? ' active' : '');
+          btn.dataset.paleta = key;
+          btn.title = p.label;
+          // Muestra siempre la variante "de uso" de esa paleta (light para diarias, dark para nocturnas)
+          const prev = PALETAS_OSCURAS.includes(key) ? p.dark : p.light;
+          btn.style.background = `linear-gradient(145deg, ${prev.g1} 0%, ${prev.g2} 100%)`;
+          // Texto legible según luminosidad del fondo
+          const r = parseInt(prev.g1.slice(1, 3), 16);
+          const labelColor = r < 100 ? '#fff' : '#1E2E2C';
+          const labelBg = r < 100 ? 'rgba(0,0,0,0.45)' : 'rgba(255,255,255,0.65)';
+          btn.innerHTML = `<span style="background:${labelBg};color:${labelColor}">${p.label}</span>`;
+          btn.onclick = () => aplicarPaleta(key);
+          cont.appendChild(btn);
+        });
+      }
+
+      addGroup('Uso diario (más claro → más apagado)', diarias);
+      addGroup('Nocturnas', nocturnas);
+    }
+
+
+    // Reaplicar paleta al cambiar claro/oscuro
+    const _origThemeApply = null; // hook via observer below
+
+    // ========== EXPORT / IMPORT CACHE ==========
+    function recolectarCache() {
+      return {
+        version: 1,
+        exportado: new Date().toISOString(),
+        reciboCustomMeses: JSON.parse(localStorage.getItem('reciboCustomMeses') || '{}'),
+        reciboIPC: JSON.parse(localStorage.getItem('reciboIPC') || '{}'),
+        reciboTheme: localStorage.getItem('reciboTheme') || 'light',
+        reciboPaleta: localStorage.getItem('reciboPaleta') || 'suave',
+        parametros: {
+          dias: document.getElementById('dias')?.value,
+          cantFallo: document.getElementById('cantFallo')?.value,
+          permPct: document.getElementById('permPct')?.value,
+          ant1: document.getElementById('ant1')?.value,
+          ant2: document.getElementById('ant2')?.value,
+          ant3: document.getElementById('ant3')?.value,
+          basePersJuego: document.getElementById('basePersJuego')?.value,
+          pctPersJuego: document.getElementById('pctPersJuego')?.value,
+          categoria: document.getElementById('categoria')?.value,
+          mes: document.getElementById('mes')?.value
+        }
+      };
+    }
+
+
+
+    function detalleRecibo(mes, cat, params) {
+      const d = getDataMes(mes);
+      if (!d || !d.cats || d.cats[cat] == null) return null;
+
+      const dias = params.dias;
+      const cantFallo = params.cantFallo;
+      const permPct = params.permPct;
+      const ant1 = params.ant1, ant2 = params.ant2, ant3 = params.ant3;
+      const basePersJuego = params.basePersJuego;
+      const pctPersJuego = params.pctPersJuego;
+
+      const catNum = parseInt(cat, 10);
+      const asigUnit = d.cats[cat];
+      const asigTotal = Math.round(asigUnit * dias);
+      const respTotal = catNum >= 20 ? asigTotal : 0;
+      const basePct = asigTotal;
+      const permanencia = Math.round(basePct * (permPct / 100));
+      const ant1Monto = Math.round(ant1 * basePct * 0.01);
+      const ant2Monto = Math.round(ant2 * basePct * 0.02);
+      const ant3Monto = Math.round(ant3 * basePct * 0.03);
+      const nuevoBonoTotal = Math.round(d.nuevoBono * dias);
+      const falloTotal = Math.round(d.falloCaja * cantFallo);
+      const bonifTotal = Math.round(d.bonifDecreto);
+      const bonifPersJuego = Math.round(basePersJuego * pctPersJuego);
+
+      const totalC = asigTotal + respTotal + permanencia + ant1Monto + ant2Monto + ant3Monto +
+                     nuevoBonoTotal + bonifTotal + bonifPersJuego;
+      const totalS = falloTotal;
+      const totalD = Math.round(totalC * 0.14) + Math.round(totalC * 0.048) + Math.round(totalC * 0.04);
+      const neto = totalC + totalS - totalD;
+
+      return {
+        mes, cat, asigTotal, respTotal, permanencia,
+        antTotal: ant1Monto + ant2Monto + ant3Monto,
+        nuevoBonoTotal, falloTotal, bonifTotal, bonifPersJuego,
+        totalC, totalS, totalD, neto
+      };
+    }
+
+    function getParamsComparador() {
+      return {
+        dias: parseFloat(document.getElementById('dias').value) || 24,
+        cantFallo: parseFloat(document.getElementById('cantFallo').value) || 24,
+        permPct: parseFloat(document.getElementById('permPct').value) || 0,
+        ant1: parseFloat(document.getElementById('ant1').value) || 0,
+        ant2: parseFloat(document.getElementById('ant2').value) || 0,
+        ant3: parseFloat(document.getElementById('ant3').value) || 0,
+        basePersJuego: parseFloat(document.getElementById('basePersJuego').value) || 0,
+        pctPersJuego: parseFloat(document.getElementById('pctPersJuego').value) || 0.37
+      };
+    }
+
+    function llenarSelectsComparador() {
+      const meses = [];
+      Object.keys(dataOriginal).forEach(m => meses.push(m));
+      Object.keys(dataCustom).forEach(m => { if (!meses.includes(m)) meses.push(m); });
+      const cats = ['13','16','18','19','20','21','22','23','24'];
+
+      function fill(id, items, current) {
+        const sel = document.getElementById(id);
+        if (!sel) return;
+        const prev = sel.value || current;
+        sel.innerHTML = items.map(v => {
+          const label = (dataCustom[v] ? v + ' ★' : v);
+          return '<option value="' + v + '">' + (id.indexOf('Cat') >= 0 ? 'Categoría ' + v : label) + '</option>';
+        }).join('');
+        if ([...sel.options].some(o => o.value === prev)) sel.value = prev;
+        else if ([...sel.options].some(o => o.value === current)) sel.value = current;
+      }
+
+      const mesActual = document.getElementById('mes').value || 'agosto 26';
+      const catActual = document.getElementById('categoria').value || '20';
+      fill('cmpMesA', meses, mesActual);
+      fill('cmpMesB', meses, 'abril 26');
+      fill('cmpCatA', cats, catActual);
+      fill('cmpCatB', cats, '19');
+    }
+
+    function tablaComparadorHTML(r) {
+      if (!r) return '<p style="color:var(--muted);font-size:0.85rem;">Sin datos para esa combinación</p>';
+      const rows = [
+        ['Asignación', r.asigTotal],
+        ['Resp. jerárquica', r.respTotal],
+        ['Permanencia', r.permanencia],
+        ['Antigüedad', r.antTotal],
+        ['Nuevo bono', r.nuevoBonoTotal],
+        ['Bonif. decreto', r.bonifTotal],
+        ['Bonif. pers. juego', r.bonifPersJuego],
+        ['Fallos de caja (S/A)', r.falloTotal],
+        ['Total C/Aportes', r.totalC],
+        ['Descuentos', -r.totalD]
+      ];
+      let h = '<table style="width:100%;border-collapse:collapse;font-size:0.82rem;"><thead><tr>';
+      h += '<th style="text-align:left;padding:6px 4px;color:var(--muted);">Concepto</th>';
+      h += '<th style="text-align:right;padding:6px 4px;color:var(--muted);">Importe</th></tr></thead><tbody>';
+      rows.forEach(([k, v]) => {
+        const txt = v < 0 ? ('−' + money(Math.abs(v))) : money(v);
+        h += '<tr style="border-bottom:1px solid var(--border);"><td style="padding:6px 4px;">' + k + '</td>';
+        h += '<td style="padding:6px 4px;text-align:right;font-variant-numeric:tabular-nums;">' + txt + '</td></tr>';
+      });
+      h += '</tbody></table>';
+      return h;
+    }
+
+    function renderComparador() {
+      const params = getParamsComparador();
+      const mesA = document.getElementById('cmpMesA').value;
+      const catA = document.getElementById('cmpCatA').value;
+      const mesB = document.getElementById('cmpMesB').value;
+      const catB = document.getElementById('cmpCatB').value;
+      const a = detalleRecibo(mesA, catA, params);
+      const b = detalleRecibo(mesB, catB, params);
+
+      document.getElementById('cmpNetoA').textContent = a ? money(a.neto) : '—';
+      document.getElementById('cmpNetoB').textContent = b ? money(b.neto) : '—';
+      document.getElementById('cmpTablaA').innerHTML = tablaComparadorHTML(a);
+      document.getElementById('cmpTablaB').innerHTML = tablaComparadorHTML(b);
+
+      const box = document.getElementById('cmpDiffBox');
+      if (!a || !b) {
+        box.innerHTML = '<h3 style="margin-top:0;">Diferencia</h3><p style="color:var(--muted);">Elegí mes y categoría válidos en ambos lados.</p>';
+        return;
+      }
+      const dNeto = a.neto - b.neto;
+      const dC = a.totalC - b.totalC;
+      const dS = a.totalS - b.totalS;
+      const dD = a.totalD - b.totalD;
+      const pct = b.neto ? ((a.neto / b.neto) - 1) * 100 : 0;
+      const cls = (n) => n > 0 ? 'color:var(--success)' : (n < 0 ? 'color:var(--discount)' : '');
+      const fmtD = (n) => (n > 0 ? '+' : n < 0 ? '−' : '') + money(Math.abs(n));
+      box.innerHTML =
+        '<h3 style="margin-top:0;">Diferencia (A − B)</h3>' +
+        '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);"><span>Neto a cobrar</span><strong style="' + cls(dNeto) + '">' + fmtD(dNeto) + ' <small>(' + (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%)</small></strong></div>' +
+        '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);"><span>Total C/Aportes</span><strong style="' + cls(dC) + '">' + fmtD(dC) + '</strong></div>' +
+        '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);"><span>S/Aportes (fallos)</span><strong style="' + cls(dS) + '">' + fmtD(dS) + '</strong></div>' +
+        '<div style="display:flex;justify-content:space-between;padding:8px 0;"><span>Descuentos</span><strong style="' + cls(-dD) + '">' + fmtD(dD) + '</strong></div>' +
+        '<p style="font-size:0.8rem;color:var(--muted);margin-top:12px;">A = <strong>' + mesA + ' · cat. ' + catA + '</strong> &nbsp;|&nbsp; B = <strong>' + mesB + ' · cat. ' + catB + '</strong></p>';
+    }
+
+    function abrirComparador() {
+      llenarSelectsComparador();
+      const modal = document.getElementById('comparadorModal');
+      if (!modal) {
+        alert('No se encontró el panel comparador.');
+        return;
+      }
+      modal.style.display = 'block';
+      document.body.style.overflow = 'hidden';
+      ['cmpMesA','cmpMesB','cmpCatA','cmpCatB'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el && !el._cmpBound) {
+          el.addEventListener('change', renderComparador);
+          el._cmpBound = true;
+        }
+      });
+      renderComparador();
+      modal.scrollTop = 0;
+    }
+
+    function cerrarComparador() {
+      const modal = document.getElementById('comparadorModal');
+      if (modal) modal.style.display = 'none';
+      document.body.style.overflow = '';
+    }
+
+    function exportarCache() {
+      const data = recolectarCache();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const fecha = new Date().toISOString().slice(0, 10);
+      a.href = url;
+      a.download = `recibo-sueldo-backup-${fecha}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      const st = document.getElementById('cacheStatus');
+      if (st) st.textContent = '✓ Datos exportados: ' + a.download;
+    }
+
+    function importarCache(ev) {
+      const file = ev.target.files && ev.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const data = JSON.parse(reader.result);
+          if (!data || typeof data !== 'object') throw new Error('JSON inválido');
+
+          if (data.reciboCustomMeses && typeof data.reciboCustomMeses === 'object') {
+            localStorage.setItem('reciboCustomMeses', JSON.stringify(data.reciboCustomMeses));
+            dataCustom = data.reciboCustomMeses;
+          }
+          if (data.reciboIPC && typeof data.reciboIPC === 'object') {
+            localStorage.setItem('reciboIPC', JSON.stringify(data.reciboIPC));
+            ipcData = data.reciboIPC;
+          }
+          if (data.reciboTheme) {
+            localStorage.setItem('reciboTheme', data.reciboTheme);
+            document.documentElement.setAttribute('data-theme', data.reciboTheme === 'dark' ? 'dark' : '');
+            if (data.reciboTheme !== 'dark') document.documentElement.removeAttribute('data-theme');
+            const btn = document.getElementById('themeToggle');
+            if (btn) btn.textContent = data.reciboTheme === 'dark' ? '☀️' : '🌙';
+            const metaTheme = document.querySelector('meta[name="theme-color"]');
+            if (metaTheme) metaTheme.setAttribute('content', data.reciboTheme === 'dark' ? '#0F1413' : '#0D6B63');
+          }
+          if (data.reciboPaleta) {
+            localStorage.setItem('reciboPaleta', data.reciboPaleta);
+          }
+          if (data.parametros && typeof data.parametros === 'object') {
+            const p = data.parametros;
+            ['dias','cantFallo','permPct','ant1','ant2','ant3','basePersJuego','pctPersJuego'].forEach(k => {
+              if (p[k] != null && document.getElementById(k)) document.getElementById(k).value = p[k];
+            });
+            if (p.basePersJuego != null) {
+              const n = parseInt(p.basePersJuego, 10) || 0;
+              const disp = document.getElementById('basePersJuegoDisplay');
+              if (disp) disp.value = n ? ('$ ' + n.toLocaleString('es-AR')) : '$ 0';
+            }
+            if (p.categoria && document.getElementById('categoria')) {
+              document.getElementById('categoria').value = p.categoria;
+            }
+            if (p.mes && document.getElementById('mes')) {
+              // se setea después de actualizarSelectMeses
+            }
+          }
+
+          actualizarSelectMeses();
+          if (data.parametros && data.parametros.mes) {
+            const sel = document.getElementById('mes');
+            if (sel && [...sel.options].some(o => o.value === data.parametros.mes)) {
+              sel.value = data.parametros.mes;
+            }
+          }
+          aplicarPaleta(localStorage.getItem('reciboPaleta') || 'suave');
+          renderPaletas();
+          cargarBases();
+          calcular();
+          const infl = document.getElementById('inflacionPanel');
+          if (infl && infl.style.display !== 'none') renderInflacion();
+
+          const st = document.getElementById('cacheStatus');
+          if (st) st.textContent = '✓ Datos importados desde ' + file.name;
+        } catch (err) {
+          alert('No se pudo importar el archivo: ' + err.message);
+        }
+        ev.target.value = '';
+      };
+      reader.readAsText(file);
+    }
+
+    function limpiarCacheLocal() {
+      if (!confirm('¿Borrar meses registrados, IPC, tema y paleta guardados en este navegador?\\nLos datos originales del recibo no se tocan.')) return;
+      localStorage.removeItem('reciboCustomMeses');
+      localStorage.removeItem('reciboIPC');
+      localStorage.removeItem('reciboTheme');
+      localStorage.removeItem('reciboPaleta');
+      dataCustom = {};
+      ipcData = {};
+      document.documentElement.removeAttribute('data-theme');
+      const btn = document.getElementById('themeToggle');
+      if (btn) btn.textContent = '🌙';
+      actualizarSelectMeses();
+      document.getElementById('mes').value = 'agosto 26';
+      aplicarPaleta('suave');
+      renderPaletas();
+      cargarBases();
+      calcular();
+      const st = document.getElementById('cacheStatus');
+      if (st) st.textContent = 'Datos locales limpiados.';
+    }
+
+
+    (function() {
+      const KEY = 'reciboTheme';
+      const btn = document.getElementById('themeToggle');
+      const metaTheme = document.querySelector('meta[name="theme-color"]');
+
+      function applyTheme(theme) {
+        if (theme === 'dark') {
+          document.documentElement.setAttribute('data-theme', 'dark');
+          if (btn) btn.textContent = '☀️';
+          if (metaTheme) metaTheme.setAttribute('content', '#0F1413');
+        } else {
+          document.documentElement.removeAttribute('data-theme');
+          if (btn) btn.textContent = '🌙';
+          if (metaTheme) metaTheme.setAttribute('content', '#0D6B63');
+        }
+        // Reaplicar paleta de fondo al cambiar tema
+        if (typeof aplicarPaleta === 'function') {
+          aplicarPaleta(localStorage.getItem('reciboPaleta') || 'suave');
+        }
+      }
+
+      // Preferencia guardada o del sistema
+      let saved = localStorage.getItem(KEY);
+      if (!saved) {
+        saved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+      applyTheme(saved);
+
+      if (btn) {
+        btn.addEventListener('click', () => {
+          const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+          localStorage.setItem(KEY, next);
+          applyTheme(next);
+        });
+      }
+    })();
+
+    // Init paletas (después de definir funciones)
+    renderPaletas();
+    aplicarPaleta(localStorage.getItem('reciboPaleta') || 'suave');
+  </script>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(reg => console.log('SW registered:', reg.scope))
+          .catch(err => console.warn('SW registration failed:', err));
+      });
+    }
+  </script>
+
+</body>
+</html>
