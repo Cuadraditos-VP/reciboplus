@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "exportado": "2026-10-14T04:47:10.375Z",
+  "reciboCustomMeses": {},
+  "reciboIPC": {
+    "mayo 26": 2.1,
+    "junio 26": 1.9,
+    "julio 26": 2.1,
+    "agosto 26": 1.7,
+    "septiembre 26": 1.9
+  },
+  "reciboTheme": "light",
+  "reciboPaleta": "suave",
+  "parametros": {
+    "dias": "24",
+    "cantFallo": "24",
+    "permPct": "3",
+    "ant1": "5",
+    "ant2": "1",
+    "ant3": "20",
+    "basePersJuego": "236462",
+    "pctPersJuego": "0.37",
+    "categoria": "20",
+    "mes": "agosto 26"
+  }
+}
